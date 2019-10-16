@@ -3,6 +3,11 @@ dist: trusty
 
 os: linux
 
+arch:
+  - amd64
+  - x86
+  - arm64
+
 language: c
 compiler:
   - gcc
@@ -17,11 +22,11 @@ env:
     - JOBS=3
     - SH=bash
     - NGX_BUILD_JOBS=$JOBS
-    - LUAJIT_PREFIX=/opt/luajit21
+    - LUAJIT_PREFIX=/tmp/luajit21
     - LUAJIT_LIB=$LUAJIT_PREFIX/lib
     - LUAJIT_INC=$LUAJIT_PREFIX/include/luajit-2.1
     - LUA_INCLUDE_DIR=$LUAJIT_INC
-    - OPENSSL_PREFIX=/opt/ssl
+    - OPENSSL_PREFIX=/tmp/ssl
     - OPENSSL_LIB=$OPENSSL_PREFIX/lib
     - OPENSSL_INC=$OPENSSL_PREFIX/include
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
@@ -32,6 +37,21 @@ env:
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.0.2t
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1d
+
+# skip some combinations
+matrix:
+  exclude:
+    - arch: arm
+      compiler: clang
+    - arch: arm64
+      compiler: clang
+    # only test amd64 for minor version
+    - arch: i386
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
+    - arch: arm
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
+    - arch: arm64
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
 
 install:
   - export NGX_BUILD_CC=$CC
@@ -51,6 +71,7 @@ install:
   - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT' > build.log 2>&1 || (cat build.log && exit 1)
   - make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - popd
+  - mkdir -p download-cache
   # openssl
   - if [ ! -f download-cache/openssl-$OPENSSL_VER.tar.gz ]; then wget -O download-cache/openssl-$OPENSSL_VER.tar.gz https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz; fi
   - tar zxf download-cache/openssl-$OPENSSL_VER.tar.gz
