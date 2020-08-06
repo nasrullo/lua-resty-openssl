@@ -23,6 +23,16 @@ local function leaps(year)
   return floor(year / 400) + floor(year / 4) - floor(year / 100)
 end
 
+local function new_asn1_string(s, tip)
+    if type(tip) ~= 'number' or tip < 0 or tip > 30 then
+        return nil, "invalid asn string type. It must be a number between 0 and 30"
+    end
+    local asn_str = ffi.C.ASN1_STRING_type_new(tip)
+    ffi.gc(asn_str, ffi.C.ASN1_STRING_free)
+    ffi.C.ASN1_STRING_set(asn_str, s, #s)
+    return asn_str
+end
+
 local function asn1_to_unix(asn1)
   local s = asn1_macro.ASN1_STRING_get0_data(asn1)
   s = ffi_str(s)
@@ -84,4 +94,5 @@ end
 
 return {
   asn1_to_unix = asn1_to_unix,
+  new_asn1_octet_string = new_asn1_octet_string,
 }
